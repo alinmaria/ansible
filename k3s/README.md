@@ -3,19 +3,9 @@
 
 This is based on the work from [this fork](https://github.com/212850a/k3s-ansible) which is based on the work from [k3s-io/k3s-ansible](https://github.com/k3s-io/k3s-ansible).
 
-Build a Kubernetes cluster using Ansible with k3s. The goal is easily install a Kubernetes cluster on machines running:
+The goal is to easily build and install a K3s Kubernetes cluster.
 
-- [X] Debian
-- [X] Ubuntu
-- [X] CentOS
+## Prerequisetes
 
-on processor architecture:
-
-- [X] x64
-- [X] arm64
-- [X] armhf
-
-## System requirements
-
-Deployment environment must have Ansible 2.4.0+
+Deployment environment must have Ansible 2.4.0+.
 Master and nodes must have passwordless SSH access
