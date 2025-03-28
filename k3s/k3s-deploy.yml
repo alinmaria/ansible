@@ -5,6 +5,7 @@
   become: yes
   roles:
     - role: prereq
+    - role: mount_nfs
     - role: download
     - role: raspberrypi
 

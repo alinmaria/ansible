@@ -4,8 +4,8 @@ ansible_become: true
 ansible_become_method: sudo
 
 # nfs vars
-nfs_server: 10.100.99.11
-nfs_share: /volume1/swarm-storage
+nfs_server: 10.100.99.15
+nfs_share: /data/swarm-storage
 mount_point: /data
 
 # portainer vars

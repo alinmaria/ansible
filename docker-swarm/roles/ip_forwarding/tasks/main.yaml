@@ -1,0 +1,40 @@
+---
+- name: Create ipforward.sh script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/ipforward.sh
+    content: |
+      #!/bin/bash
+      nsenter --net=/run/docker/netns/ingress_sbox sysctl -w net.ipv4.ip_forward=1
+    mode: '0755'
+
+- name: Create systemd service file
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/ingress-sbox-ipforward.service
+    content: |
+      [Unit]
+      Description=Set net.ipv4.ip_forward for ingress_sbox namespace
+      After=docker.service
+      Wants=docker.service
+      
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStartPre=/bin/sleep 10
+      ExecStart=/usr/local/bin/ipforward.sh
+      
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true 
+- name: Enable systemd service
+  ansible.builtin.command: systemctl enable ingress-sbox-ipforward.service
+- name: Start systemd service
+  ansible.builtin.command: systemctl start ingress-sbox-ipforward.service
+- name: Check systemd service status
+  ansible.builtin.command: systemctl status ingress-sbox-ipforward.service
+  register: service_status
+- name: Display service status
+  ansible.builtin.debug:
+    msg: "{{ service_status.stdout }}"
