@@ -5,9 +5,11 @@
   become: yes
   roles:
     - role: prereq
-    - role: mount_nfs
+    #- role: mount_nfs
     - role: download
     - role: raspberrypi
+    - role: apply-manifests
+    - role: kube-vip
 
 - hosts: master
   become: yes
