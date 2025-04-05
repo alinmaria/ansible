@@ -1,4 +1,62 @@
 ---
+- name: Clean previous runs of k3s-init
+  systemd:
+    name: k3s-init
+    state: stopped
+  failed_when: false
+
+- name: Clean previous runs of k3s-init
+  command: systemctl reset-failed k3s-init
+  failed_when: false
+  changed_when: false
+  args:
+    warn: false  # The ansible systemd module does not support reset-failed
+
+- name: Create manifests directory on first master
+  file:
+    path: /var/lib/rancher/k3s/server/manifests
+    state: directory
+  when: ansible_host == hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0])
+
+- name: Copy vip manifest to first master
+  template:
+    src: "vip.yaml.j2"
+    dest: "/var/lib/rancher/k3s/server/manifests/vip.yaml"
+    owner: root
+    group: root
+    mode: 0644
+  when: ansible_host == hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0])
+
+- name: Init cluster inside the transient k3s-init service
+  command:
+    cmd: "systemd-run -p RestartSec=2 \
+                      -p Restart=on-failure \
+                      --unit=k3s-init \
+                      k3s server {{ server_init_args }}"
+    creates: "{{ systemd_dir }}/k3s.service"
+  # The ansible systemd module does not support transient units
+
+- name: Verification
+  block:
+    - name: Verify that all nodes actually joined (check k3s-init.service if this fails)
+      command:
+        cmd: k3s kubectl get nodes -l "node-role.kubernetes.io/master=true" -o=jsonpath="{.items[*].metadata.name}"
+      register: nodes
+      until: nodes.rc == 0 and (nodes.stdout.split() | length) == (groups['master'] | length)
+      retries: 20
+      delay: 10
+      changed_when: false
+  always:
+    - name: Kill the temporary service used for initialization
+      systemd:
+        name: k3s-init
+        state: stopped
+      failed_when: false
+
+
+
+
+
 
 - name: Copy K3s service file
   register: k3s_service
@@ -22,17 +80,17 @@
 
 - name: Register node-token file access mode
   stat:
-    path: "{{ k3s_server_location }}/server/node-token"
+    path: "{{ k3s_server_location }}/server"
   register: p
 
 - name: Change file access node-token
   file:
-    path: "{{ k3s_server_location }}/server/node-token"
+    path: "{{ k3s_server_location }}/server"
     mode: "g+rx,o+rx"
 
 - name: Read node-token from master
-  slurp:
-    path: "{{ k3s_server_location }}/server/node-token"
+  ansible.builtin.slurp:
+    src: "{{ k3s_server_location }}/server/node-token"
   register: node_token
 
 - name: Store Master node-token
@@ -41,7 +99,7 @@
 
 - name: Restore node-token file access
   file:
-    path: "{{ k3s_server_location }}/server/node-token"
+    path: "{{ k3s_server_location }}/server"
     mode: "{{ p.stat.mode }}"
 
 - name: Create directory .kube
@@ -51,20 +109,6 @@
     owner: "{{ ansible_user }}"
     mode: "u=rwx,g=rx,o="
 
-# Use kubectl to deploy yaml. Perhaps this can be added to the manifest folder initially
-- name: Apply kube vip configuration file
-  ansible.builtin.command:
-    cmd: kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml apply -f https://kube-vip.io/manifests/rbac.yaml
-  changed_when: true
-  #when: inventory_hostname == groups['master'][0]
-
-# Apply the kube-vip configration. Perhaps this can be added to the manifest folder initially
-- name: Apply kube vip configuration file
-  ansible.builtin.command:
-    cmd: kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml apply -f https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml
-  changed_when: true
-  #when: inventory_hostname == groups['master'][0]
-
 - name: Copy config file to user home directory
   copy:
     src: /etc/rancher/k3s/k3s.yaml
@@ -73,12 +117,12 @@
     owner: "{{ ansible_user }}"
     mode: "u=rw,g=,o="
 
-# - name: Replace https://localhost:6443 by https://master-ip:6443
-#   command: >-
-#     k3s kubectl config set-cluster default
-#       --server=https://{{ master_ip }}:6443
-#       --kubeconfig ~{{ ansible_user }}/.kube/config
-#   changed_when: true
+- name: Configure kubectl cluster to https://{{ apiserver_endpoint }}:6443
+  command: >-
+    k3s kubectl config set-cluster default
+      --server=https://{{ apiserver_endpoint }}:6443
+      --kubeconfig ~{{ ansible_user }}/.kube/config
+  changed_when: true
 
 - name: Create kubectl symlink
   file:

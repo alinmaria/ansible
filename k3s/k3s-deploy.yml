@@ -8,13 +8,11 @@
     #- role: mount_nfs
     - role: download
     - role: raspberrypi
-    - role: apply-manifests
-    - role: kube-vip
 
-- hosts: master
-  become: yes
-  roles:
-    - role: k3s/master
+# - hosts: master
+#   become: yes
+#   roles:
+#     - role: k3s/master
 
 - hosts: node
   become: yes
