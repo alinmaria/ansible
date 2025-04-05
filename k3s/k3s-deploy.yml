@@ -5,7 +5,7 @@
   become: yes
   roles:
     - role: prereq
-    #- role: mount_nfs
+    - role: mount_nfs
     - role: download
     - role: raspberrypi
 
@@ -13,8 +13,9 @@
   become: yes
   roles:
     - role: k3s/master
+    - role: metallb
 
-- hosts: node
+- hosts: agent
   become: yes
   roles:
-    - role: k3s/node
+    - role: k3s/agent

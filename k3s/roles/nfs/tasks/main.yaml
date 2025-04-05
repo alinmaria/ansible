@@ -19,7 +19,7 @@
     path: "{{ mount_point }}"
     state: directory
     mode: '0777'
-  when: not mount_point_stat.stat.exists
+  when: mount_point is defined
 
 - name: Mount NFS share
   ansible.posix.mount:
@@ -28,3 +28,4 @@
     fstype: "nfs"
     opts: "vers=4,proto=tcp,nolock"
     state: mounted
+  when: mount_point is defined
