@@ -4,6 +4,7 @@
   template:
     src: "k3s.service.j2"
     dest: "{{ systemd_dir }}/k3s-node.service"
+    force: no
     owner: root
     group: root
     mode: 0755

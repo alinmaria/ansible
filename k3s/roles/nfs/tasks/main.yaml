@@ -14,6 +14,15 @@
     path: "{{ mount_point }}"
   register: mount_point_stat
 
+# - name: Copy NFS manifest to first master
+#   template:
+#     src: "nfs.yaml.j2"
+#     dest: "/var/lib/rancher/k3s/server/manifests/nfs.yaml"
+#     owner: root
+#     group: root
+#     mode: 0644
+#   when: ansible_host == hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0])
+
 - name: Create mount point for NFS if it doesn't exist
   ansible.builtin.file:
     path: "{{ mount_point }}"

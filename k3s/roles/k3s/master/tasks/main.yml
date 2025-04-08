@@ -22,8 +22,8 @@
   template:
     src: "vip.yaml.j2"
     dest: "/var/lib/rancher/k3s/server/manifests/vip.yaml"
-    owner: root
-    group: root
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: 0644
   when: ansible_host == hostvars[groups['master'][0]]['ansible_host'] | default(groups['master'][0])
 
@@ -58,8 +58,8 @@
   template:
     src: "k3s.service.j2"
     dest: "{{ systemd_dir }}/k3s.service"
-    owner: root
-    group: root
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: 0644
 
 - name: Enable and check K3s service
