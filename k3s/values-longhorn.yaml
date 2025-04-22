@@ -1,0 +1,26 @@
+# values.yaml
+longhornManager:
+  nodeSelector:
+    longhorn: "true"
+  tolerations:
+    - operator: "Exists"
+
+longhornDriver:
+  nodeSelector:
+    longhorn: "true"
+  tolerations:
+    - operator: "Exists"
+
+longhornUI:
+  nodeSelector:
+    longhorn: "true"
+  tolerations:
+    - operator: "Exists"
+
+service:
+  ui:
+    type: LoadBalancer
+    loadBalancerIP: "10.100.99.130"
+
+defaultSettings:
+  defaultDataPath: /volume-storage
